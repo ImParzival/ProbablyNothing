@@ -1,0 +1,33 @@
+query($exName:String!,$bCurrency:String!,$qCurrency:String!,$startDate:ISO8601DateTime,$endDate:ISO8601DateTime){
+  ethereum(network: ethereum) {
+    dexTrades(      
+      exchangeName: {is: $exName},
+      any: {time: {since: $startDate, till: $endDate}}, 
+      baseCurrency: {is: $bCurrency}, 
+      quoteCurrency: {is: $qCurrency}) {
+     
+    
+      baseCurrency {
+        symbol
+        address
+      }
+      baseAmount
+      quoteCurrency {
+        symbol
+        address
+      }
+      quoteAmount
+      
+      trades: count
+      quotePrice
+      transaction{
+        hash
+        txFrom {
+          address
+        }
+      }
+      side
+  
+    }
+  }
+}

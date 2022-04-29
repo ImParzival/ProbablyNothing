@@ -1,0 +1,7 @@
+{
+  "exName":"exchangeName",
+  "bCurrency":"baseCurrency",
+  "qCurrency":"quoteCurrency",
+  "startDate":"startDateTime",
+  "endDate":"endDateTime"
+}
