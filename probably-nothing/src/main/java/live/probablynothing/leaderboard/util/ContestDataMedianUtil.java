@@ -49,6 +49,28 @@ public class ContestDataMedianUtil {
 			return 0.0;
 	}
 
+	public static double getMedianPurchaseValueInUSD(List<ContestData> contestsData) {
+		int size = contestsData.size();
+
+		if (size > 1) {
+			if (size % 2 != 0) {
+				ContestData contestData = contestsData.get(size / 2);
+				contestData.setMedian(true);
+				return contestData.getPurchaseValueInUSD();
+			} else {
+				ContestData median1 = contestsData.get((size - 1) / 2);
+				ContestData median2 = contestsData.get(size / 2);
+				median1.setMedian(true);
+				median2.setMedian(true);
+				return (median1.getPurchaseValueInUSD() + median2.getPurchaseValueInUSD()) / 2;
+			}
+		} else if (size == 1) {
+			return contestsData.get(size).getPurchaseValueInUSD();
+		} else
+			return 0.0;
+
+	}
+
 	public static List<ContestData> medianContestWinners(List<ContestData> contestsData, boolean onlyMedianLeaders) {
 
 		double medianTokenAmount = getMedianTokenAmount(contestsData);
@@ -57,8 +79,8 @@ public class ContestDataMedianUtil {
 
 		int rank = 1;
 		for (ContestData contestData : contestsData) {
-			
-			//set rank
+
+			// set rank
 			contestData.setRank(rank);
 			rank++;
 			double currentTokenAmount = contestData.getTokenAmount();
@@ -75,35 +97,89 @@ public class ContestDataMedianUtil {
 				if (medianMap.containsKey(medianDiff)) {
 					double newKey = medianDiff + SMALL_DIFF;
 					medianMap.put(newKey, contestData);
-				}
-				else
+				} else
 					medianMap.put(medianDiff, contestData);
 			}
 
 		}
-		
+
 		List<ContestData> medianLeaders = new ArrayList<ContestData>();
-		
+
 		int count = 1;
 		for (Map.Entry<Double, ContestData> entry : medianMap.entrySet()) {
 			if (count <= 6) {
 				ContestData contestData = entry.getValue();
 				contestData.setMedianLeader(true);
-				
+
 				contestData.setWinner(true);
 				count++;
-				if(onlyMedianLeaders) {
-					medianLeaders.add(contestData);					
-				}			
-				
+				if (onlyMedianLeaders) {
+					medianLeaders.add(contestData);
+				}
+
 			} else
 				break;
 		}
-		
-		if(onlyMedianLeaders)
+
+		if (onlyMedianLeaders)
 			return medianLeaders;
 		return contestsData;
 
-	}	
-	
+	}
+
+	public static List<ContestData> medianContestWinnersByPurchaseValueInUSD(List<ContestData> contestsData,
+			boolean onlyMedianLeaders) {
+
+		double medianPurchaseValueInUSD = getMedianPurchaseValueInUSD(contestsData);
+
+		SortedMap<Double, ContestData> medianMap = new TreeMap<Double, ContestData>();
+
+		int rank = 1;
+		for (ContestData contestData : contestsData) {
+			// set rank
+			contestData.setRank(rank);
+			rank++;
+
+			double currentPurchaseValueInUSD = contestData.getPurchaseValueInUSD();
+			if (currentPurchaseValueInUSD > medianPurchaseValueInUSD) {
+				double medianDiff = currentPurchaseValueInUSD - medianPurchaseValueInUSD;
+				if (medianMap.containsKey(medianDiff)) {
+					double newKey = medianDiff + SMALL_DIFF;
+					medianMap.put(newKey, contestData);
+				} else
+					medianMap.put(medianDiff, contestData);
+			} else {
+				double medianDiff = medianPurchaseValueInUSD - currentPurchaseValueInUSD;
+				if (medianMap.containsKey(medianDiff)) {
+					double newKey = medianDiff + SMALL_DIFF;
+					medianMap.put(newKey, contestData);
+				} else
+					medianMap.put(medianDiff, contestData);
+
+			}
+		}
+
+		List<ContestData> medianLeaders = new ArrayList<ContestData>();
+
+		int count = 1;
+		for (Map.Entry<Double, ContestData> entry : medianMap.entrySet()) {
+			if (count <= 6) {
+				ContestData contestData = entry.getValue();
+				contestData.setMedianLeader(true);
+
+				contestData.setWinner(true);
+				count++;
+				if (onlyMedianLeaders) {
+					medianLeaders.add(contestData);
+				}
+
+			} else
+				break;
+		}
+
+		if (onlyMedianLeaders)
+			return medianLeaders;
+		return contestsData;
+	}
+
 }

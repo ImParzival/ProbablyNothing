@@ -33,6 +33,8 @@ public class ContestData {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 	
+	private String txHash;
+	
 	//foreign key from the header
 	@JsonIgnore
 	@ManyToOne(cascade = CascadeType.DETACH)

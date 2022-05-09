@@ -2,9 +2,7 @@ package live.probablynothing.leaderboard.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -25,76 +23,53 @@ public class LeaderboardEngine {
 	@Autowired
 	ContestDataRepository contestDataRepository;
 
-	private static final String SELL = "SELL";	
-	
-	int numberOfTradesFound ;
+	private static final String SELL = "SELL";
 
+	int numberOfTradesFound;
+
+	/**
+	 * Finds Dex trades between start and end date by querying Bitquery API. If new
+	 * trades are found, updates the ContestData.
+	 * 
+	 * @param contestHeader
+	 * @param startDate
+	 * @param endDate
+	 * @throws IOException
+	 */
 	public void process(ContestHeader contestHeader, String startDate, String endDate) throws IOException {
 
-		// query bitquery API to get the latest trades
+		// Call bitquery API to get the latest trades
 		DexTradeDTO dto = bitqueryClient.getDexTrades(contestHeader, startDate, endDate);
 
-		Map<String, Integer> addressIndex = new HashMap<String, Integer>();
-		List<ContestData> contestsData = new ArrayList<ContestData>();
-		try {
-			if(numberOfTradesFound == dto.getData().getEthereum().getDexTrades().size())
-			{
-				System.out.println("No new transactions found..");
-				return;
-			}
-		    numberOfTradesFound = dto.getData().getEthereum().getDexTrades().size();
-			for (DexTrade trade : dto.getData().getEthereum().getDexTrades()) {
-				String walletAddress = trade.getTransaction().getTxFrom().getAddress();
-				ContestData contestData;
-				if (addressIndex.containsKey(walletAddress)) {
-					int index = addressIndex.get(walletAddress);
-					contestData = contestsData.get(index);
-					if (trade.getSide().equals(SELL))
-					{
-						contestData.setPurchaseValueInETH(contestData.getPurchaseValueInETH() + trade.getQuoteAmount());
-						contestData.setPurchaseValueInUSD(contestData.getPurchaseValueInUSD() + trade.getTradeAmount());
-						contestData.setTokenAmount(contestData.getTokenAmount() + trade.getBaseAmount());
-					}
-					else {
-						contestData.setPurchaseValueInETH(contestData.getPurchaseValueInETH() - trade.getQuoteAmount());
-						contestData.setPurchaseValueInUSD(contestData.getPurchaseValueInUSD() - trade.getTradeAmount());
-						contestData.setTokenAmount(contestData.getTokenAmount() - trade.getBaseAmount());
-						
-					}
-
-				} else {
-					contestData = new ContestData();
-					contestData.setAddress(walletAddress);
-					contestData.setContestHeader(contestHeader);
-					if (trade.getSide().equals(SELL))
-					{
-						contestData.setPurchaseValueInETH(trade.getQuoteAmount());
-					    contestData.setPurchaseValueInUSD(trade.getTradeAmount());
-					    contestData.setTokenAmount(trade.getBaseAmount());
-					}
-					else {
-						contestData.setPurchaseValueInETH(-trade.getQuoteAmount());
-					    contestData.setPurchaseValueInUSD(-trade.getTradeAmount());
-					    contestData.setTokenAmount(-trade.getBaseAmount());						
-					}
-					contestsData.add(contestData);
-					int index = contestsData.lastIndexOf(contestData);
-					addressIndex.put(walletAddress, index);
-				}
-			}
-			if(!contestsData.isEmpty())
-			{
-				contestDataRepository.deleteAll();
-				contestDataRepository.saveAll(contestsData);
-			}
-			
-			System.out.println("Leaderboard updated...");
-
-		} catch (NullPointerException exc) {
-			// TODO: handle exception
+		if (numberOfTradesFound == dto.getData().getEthereum().getDexTrades().size()) {
+			System.out.println("No new transactions found..");
+			return;
 		}
+		numberOfTradesFound = dto.getData().getEthereum().getDexTrades().size();
 
+		List<ContestData> contestsData = new ArrayList<ContestData>();
+		for (DexTrade trade : dto.getData().getEthereum().getDexTrades()) {
+
+			// the bitquery considers it from the DEX perspective. So if person A buys a
+			// token, the dex treats it as sale of the token. "SELL" side means token buy.
+			if (trade.getSide().equals(SELL)) {
+				ContestData contestData = new ContestData();
+				contestData.setAddress(trade.getTransaction().getTxFrom().getAddress());
+				contestData.setTxHash(trade.getTransaction().getHash());
+				contestData.setContestHeader(contestHeader);
+				contestData.setPurchaseValueInETH(trade.getQuoteAmount());
+				contestData.setPurchaseValueInUSD(trade.getTradeAmount());
+				contestData.setTokenAmount(trade.getBaseAmount());
+				contestsData.add(contestData);
+			}
+
+		}
+		
+		if(!contestsData.isEmpty())
+		{
+			contestDataRepository.deleteAll();
+			contestDataRepository.saveAll(contestsData);
+		}
 	}
-	
 
 }

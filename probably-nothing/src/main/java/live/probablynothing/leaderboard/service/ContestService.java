@@ -131,13 +131,20 @@ public class ContestService {
 	}
 
 	public List<ContestData> getContestDataExcludingSellsDesc(Long contestId, String orderBy) {
+
+		List<ContestData> contestsData;
+
 		switch (orderBy) {
 		case OrderBy.TOKEN_AMOUNT:
 
-			List<ContestData> contestsData = contestDataRepository
+			contestsData = contestDataRepository
 					.findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(contestId, 1.0);
 
 			return ContestDataMedianUtil.medianContestWinners(contestsData, false);
+
+		case OrderBy.PURCHASE_VALUE_IN_USD:
+			contestsData = contestDataRepository.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
+			return ContestDataMedianUtil.medianContestWinnersByPurchaseValueInUSD(contestsData, false);
 
 		/*
 		 * case OrderBy.PURCHASE_VALUE_IN_ETH: break; case
@@ -159,8 +166,13 @@ public class ContestService {
 	 */
 	public List<ContestData> getCurrentLeadersContestData(Long contestId, String orderBy, boolean onlyLeaders) {
 		if (onlyLeaders) {
-			List<ContestData> contestsData = contestDataRepository
-					.findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(contestId, 1.0);
+			/*
+			 * List<ContestData> contestsData = contestDataRepository
+			 * .findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(
+			 * contestId, 1.0);
+			 */
+			
+			List<ContestData> contestsData = contestDataRepository.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
 
 			int index = 0;
 			List<ContestData> result = new ArrayList<ContestData>();
@@ -174,7 +186,7 @@ public class ContestService {
 
 			}
 
-			result.addAll(ContestDataMedianUtil.medianContestWinners(contestsData, true));
+			result.addAll(ContestDataMedianUtil.medianContestWinnersByPurchaseValueInUSD(contestsData, true));
 
 			return result;
 		} else {

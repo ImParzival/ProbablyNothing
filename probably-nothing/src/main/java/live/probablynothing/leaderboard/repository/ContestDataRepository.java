@@ -30,6 +30,8 @@ public interface ContestDataRepository extends JpaRepository<ContestData, Long> 
 	 */	
 	public List<ContestData> findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(Long id,
 			double tokenAmount);
+	
+	
 
 	@Query("FROM ContestData as cd JOIN cd.contestHeader ch WHERE ch.id = :id AND cd.tokenAmount > :tokenAmount ORDER BY cd.tokenAmount DESC")
 	public List<ContestData> getLeaderboardWithoutSellsData(Long id, double tokenAmount);
