@@ -16,17 +16,7 @@ import live.probablynothing.leaderboard.util.LeaderboardEngine;
 
 @Configuration
 @EnableScheduling
-//@Service
-public class BitqueryCallExecutor {
-
-	// Initial Logic
-	/*
-	 * 1. Read the Active Contest 2. Get the start and End date 3. convert start and
-	 * end date to ISO8601 with offset of PST time zone 4. Call the Bitquery by
-	 * passing start and end 5. Calculate the leaderboard and save to the
-	 * ContestData
-	 */	
-	
+public class BitqueryCallExecutor {	
 
 	@Autowired
 	ContestHeaderRepository repo;
@@ -34,7 +24,8 @@ public class BitqueryCallExecutor {
 	@Autowired
 	LeaderboardEngine engine;
 
-	@Scheduled(fixedDelay = 30000)
+	@Scheduled(fixedDelay = 600000)
+	//@Scheduled(fixedDelay = 30000)
 	public void getLatestDexTrades() throws ParseException, IOException {
 
 		// 1. Read the active contest

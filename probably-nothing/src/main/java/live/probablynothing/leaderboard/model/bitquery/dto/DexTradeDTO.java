@@ -29,6 +29,7 @@ public class DexTradeDTO {
 
 		private BaseCurrency baseCurrency;
 		private double baseAmount;
+		private double tradeAmount;
 		private QuoteCurrency quoteCurrency;
 		private double quoteAmount;
 		public int trades;

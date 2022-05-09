@@ -25,14 +25,14 @@ public class LeaderboardEngine {
 	@Autowired
 	ContestDataRepository contestDataRepository;
 
-	private static final String BUY = "BUY";	
+	private static final String SELL = "SELL";	
 	
 	int numberOfTradesFound ;
 
 	public void process(ContestHeader contestHeader, String startDate, String endDate) throws IOException {
 
 		// query bitquery API to get the latest trades
-		DexTradeDTO dto = bitqueryClient.getDexTrades(startDate, endDate);
+		DexTradeDTO dto = bitqueryClient.getDexTrades(contestHeader, startDate, endDate);
 
 		Map<String, Integer> addressIndex = new HashMap<String, Integer>();
 		List<ContestData> contestsData = new ArrayList<ContestData>();
@@ -49,20 +49,33 @@ public class LeaderboardEngine {
 				if (addressIndex.containsKey(walletAddress)) {
 					int index = addressIndex.get(walletAddress);
 					contestData = contestsData.get(index);
-					if (trade.getSide().equals(BUY))
-						contestData.setPurchaseAmount(contestData.getPurchaseAmount() + trade.getBaseAmount());
+					if (trade.getSide().equals(SELL))
+					{
+						contestData.setPurchaseValueInETH(contestData.getPurchaseValueInETH() + trade.getQuoteAmount());
+						contestData.setPurchaseValueInUSD(contestData.getPurchaseValueInUSD() + trade.getTradeAmount());
+						contestData.setTokenAmount(contestData.getTokenAmount() + trade.getBaseAmount());
+					}
 					else {
-						contestData.setPurchaseAmount(contestData.getPurchaseAmount() - trade.getBaseAmount());
+						contestData.setPurchaseValueInETH(contestData.getPurchaseValueInETH() - trade.getQuoteAmount());
+						contestData.setPurchaseValueInUSD(contestData.getPurchaseValueInUSD() - trade.getTradeAmount());
+						contestData.setTokenAmount(contestData.getTokenAmount() - trade.getBaseAmount());
+						
 					}
 
 				} else {
 					contestData = new ContestData();
 					contestData.setAddress(walletAddress);
 					contestData.setContestHeader(contestHeader);
-					if (trade.getSide().equals(BUY))
-						contestData.setPurchaseAmount(trade.getBaseAmount());
+					if (trade.getSide().equals(SELL))
+					{
+						contestData.setPurchaseValueInETH(trade.getQuoteAmount());
+					    contestData.setPurchaseValueInUSD(trade.getTradeAmount());
+					    contestData.setTokenAmount(trade.getBaseAmount());
+					}
 					else {
-						contestData.setPurchaseAmount(-trade.getBaseAmount());
+						contestData.setPurchaseValueInETH(-trade.getQuoteAmount());
+					    contestData.setPurchaseValueInUSD(-trade.getTradeAmount());
+					    contestData.setTokenAmount(-trade.getBaseAmount());						
 					}
 					contestsData.add(contestData);
 					int index = contestsData.lastIndexOf(contestData);

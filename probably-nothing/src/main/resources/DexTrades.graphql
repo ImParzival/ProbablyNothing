@@ -12,6 +12,7 @@ query($exName:String!,$bCurrency:String!,$qCurrency:String!,$startDate:ISO8601Da
         address
       }
       baseAmount
+      tradeAmount(in : USD)
       quoteCurrency {
         symbol
         address

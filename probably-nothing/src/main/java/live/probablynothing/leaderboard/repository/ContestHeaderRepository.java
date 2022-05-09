@@ -8,7 +8,7 @@ import org.springframework.stereotype.Repository;
 import live.probablynothing.leaderboard.model.ContestHeader;
 
 @Repository
-public interface ContestHeaderRepository extends JpaRepository<ContestHeader, String> {
+public interface ContestHeaderRepository extends JpaRepository<ContestHeader, Long> {
 
 
 	

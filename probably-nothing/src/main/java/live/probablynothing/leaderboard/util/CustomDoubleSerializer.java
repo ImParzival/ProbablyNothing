@@ -17,7 +17,8 @@ public class CustomDoubleSerializer extends JsonSerializer<Double> {
 		}
 		else
 		{
-			DecimalFormat df = new DecimalFormat("#,###.00");
+			//DecimalFormat df = new DecimalFormat("#,###.00");
+			DecimalFormat df = new DecimalFormat("#.###");
 			gen.writeNumber(df.format(value)); 
 		}
 		

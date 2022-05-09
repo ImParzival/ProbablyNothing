@@ -1,5 +1,7 @@
 package live.probablynothing.leaderboard.service;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -9,9 +11,12 @@ import org.springframework.stereotype.Service;
 
 import live.probablynothing.leaderboard.model.ContestData;
 import live.probablynothing.leaderboard.model.ContestHeader;
+import live.probablynothing.leaderboard.model.ContestStatus;
 import live.probablynothing.leaderboard.model.ContestType;
+import live.probablynothing.leaderboard.model.OrderBy;
 import live.probablynothing.leaderboard.repository.ContestDataRepository;
 import live.probablynothing.leaderboard.repository.ContestHeaderRepository;
+import live.probablynothing.leaderboard.util.ContestDataMedianUtil;
 
 @Service
 public class ContestService {
@@ -22,11 +27,22 @@ public class ContestService {
 	@Autowired
 	ContestDataRepository contestDataRepository;
 
-	public ContestHeader createContestHeader(String name, String startDate, String endDate, boolean isActive) {
+	public ContestHeader createContestHeader(String name, String tokenContract, String startDate, String endDate,
+			boolean isActive) {
 
-		ContestHeader contestHeader = ContestHeader.builder().name(name).type(ContestType.STANDARD).startDate(startDate)
-				.endDate(endDate).isActive(isActive).build();
-		return contestHeaderRepository.save(contestHeader);
+		ContestHeader header = new ContestHeader();
+		header.setName(name);
+		header.setTokenContract(tokenContract);
+		header.setType(ContestType.STANDARD);
+		header.setStartDate(startDate);
+		header.setEndDate(endDate);
+		header.setActive(isActive);
+		if (isActive)
+			header.setStatus(ContestStatus.IN_PROGRESS);
+		else
+			header.setStatus(ContestStatus.NEW);
+
+		return contestHeaderRepository.save(header);
 	}
 
 	public List<ContestHeader> getAllContestHeaders() {
@@ -37,16 +53,16 @@ public class ContestService {
 		return contestHeaderRepository.findByIsActive(true);
 	}
 
-	public Optional<ContestHeader> getContest(String id) {
+	public Optional<ContestHeader> getContest(Long id) {
 
 		return contestHeaderRepository.findById(id);
 	}
 
-	public void deleteContest(String id) {
+	public void deleteContest(Long id) {
 		contestHeaderRepository.deleteById(id);
 	}
 
-	public String activateContest(String id) {
+	public String activateContest(Long id) {
 		List<ContestHeader> contests = contestHeaderRepository.findByIsActive(true);
 		if (!contests.isEmpty()) {
 			return "Already an active contest exists";
@@ -55,10 +71,12 @@ public class ContestService {
 			try {
 				Optional<ContestHeader> contestHeader = contestHeaderRepository.findById(id);
 				ContestHeader contest = contestHeader.get();
-				
-				if(contest.isActive())
+
+				if (contest.isActive())
 					return "contest is already active";
+
 				contest.setActive(true);
+				contest.setStatus(ContestStatus.IN_PROGRESS);
 				contestHeaderRepository.save(contest);
 				return "contest is activated";
 
@@ -72,16 +90,16 @@ public class ContestService {
 
 	}
 
-	public String deActivateContest(String id) {
+	public String deActivateContest(Long id) {
 
 		try {
 			Optional<ContestHeader> contestHeader = contestHeaderRepository.findById(id);
 			ContestHeader contest = contestHeader.get();
-			if(!contest.isActive())
+			if (!contest.isActive())
 				return "contest is already inactive";
-			
-			
+
 			contest.setActive(false);
+			contest.setStatus(ContestStatus.HALTED);
 			contestHeaderRepository.save(contest);
 			return "contest is deactivated";
 
@@ -91,9 +109,78 @@ public class ContestService {
 			return "input correct contest Id";
 		}
 	}
-	
-	public List<ContestData> getContestDataDesc(String contestId){
-		return contestDataRepository.findByContestHeaderIdOrderByPurchaseAmountDesc(contestId);
+
+	public List<ContestData> getContestDataDesc(Long contestId, String orderBy) {
+
+		switch (orderBy) {
+		case OrderBy.TOKEN_AMOUNT:
+
+			return contestDataRepository.findByContestHeaderIdOrderByTokenAmountDesc(contestId);
+
+		case OrderBy.PURCHASE_VALUE_IN_ETH:
+			return contestDataRepository.findByContestHeaderIdOrderByPurchaseValueInETHDesc(contestId);
+
+		case OrderBy.PURCHASE_VALUE_IN_USD:
+			return contestDataRepository.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
+
+		default:
+			return contestDataRepository.findByContestHeaderIdOrderByTokenAmountDesc(contestId);
+
+		}
+
+	}
+
+	public List<ContestData> getContestDataExcludingSellsDesc(Long contestId, String orderBy) {
+		switch (orderBy) {
+		case OrderBy.TOKEN_AMOUNT:
+
+			List<ContestData> contestsData = contestDataRepository
+					.findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(contestId, 1.0);
+
+			return ContestDataMedianUtil.medianContestWinners(contestsData, false);
+
+		/*
+		 * case OrderBy.PURCHASE_VALUE_IN_ETH: break; case
+		 * OrderBy.PURCHASE_VALUE_IN_USD:
+		 */
+
+		default:
+			return contestDataRepository.findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(contestId,
+					1.0);
+
+		}
+	}
+
+	/**
+	 * Gets the current leaders and median leaders
+	 * 
+	 * @param contestId
+	 * @return
+	 */
+	public List<ContestData> getCurrentLeadersContestData(Long contestId, String orderBy, boolean onlyLeaders) {
+		if (onlyLeaders) {
+			List<ContestData> contestsData = contestDataRepository
+					.findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(contestId, 1.0);
+
+			int index = 0;
+			List<ContestData> result = new ArrayList<ContestData>();
+			for (ContestData data : contestsData) {
+				if (index < 4) {
+					data.setWinner(true);
+					result.add(data);
+					index++;
+				} else
+					break;
+
+			}
+
+			result.addAll(ContestDataMedianUtil.medianContestWinners(contestsData, true));
+
+			return result;
+		} else {
+			return getContestDataExcludingSellsDesc(contestId, orderBy);
+		}
+
 	}
 
 }
