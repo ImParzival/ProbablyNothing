@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import live.probablynothing.leaderboard.model.ContestHeader;
 import live.probablynothing.leaderboard.repository.ContestHeaderRepository;
+import live.probablynothing.leaderboard.service.TokenInfoService;
 import live.probablynothing.leaderboard.util.DateTimeUtil;
 import live.probablynothing.leaderboard.util.LeaderboardEngine;
 
@@ -23,9 +24,12 @@ public class BitqueryCallExecutor {
 	
 	@Autowired
 	LeaderboardEngine engine;
+	
+	@Autowired
+	TokenInfoService tokenInfoService;
 
-	@Scheduled(fixedDelay = 600000)
-	//@Scheduled(fixedDelay = 30000)
+	//@Scheduled(fixedDelay = 600000)
+	@Scheduled(fixedDelay = 30000)
 	public void getLatestDexTrades() throws ParseException, IOException {
 
 		// 1. Read the active contest
@@ -36,12 +40,18 @@ public class BitqueryCallExecutor {
 			String startDate = DateTimeUtil.getISO8601DateTimeInPST(contestHeader.getStartDate());
 			String endDate = DateTimeUtil.getISO8601DateTimeInPSTEnd(contestHeader.getEndDate());
 			
+			//Get and store trades information
 			engine.process(contestHeader, startDate, endDate);
+			
+			//Get the Total Number of Token Holders and save it locally
+			tokenInfoService.saveTokenInfo(contestHeader.getTokenContract());
 		}
 		else
 			System.out.println("No active contest found");
 		  
 
 	}
+	
+	
 
 }
