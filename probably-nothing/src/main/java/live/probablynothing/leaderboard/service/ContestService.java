@@ -13,9 +13,12 @@ import live.probablynothing.leaderboard.model.ContestData;
 import live.probablynothing.leaderboard.model.ContestHeader;
 import live.probablynothing.leaderboard.model.ContestStatus;
 import live.probablynothing.leaderboard.model.ContestType;
+import live.probablynothing.leaderboard.model.CumulativeContestData;
+import live.probablynothing.leaderboard.model.LeaderboardType;
 import live.probablynothing.leaderboard.model.OrderBy;
 import live.probablynothing.leaderboard.repository.ContestDataRepository;
 import live.probablynothing.leaderboard.repository.ContestHeaderRepository;
+import live.probablynothing.leaderboard.repository.CumulativeContestDataRepository;
 import live.probablynothing.leaderboard.util.ContestDataMedianUtil;
 
 @Service
@@ -26,6 +29,9 @@ public class ContestService {
 
 	@Autowired
 	ContestDataRepository contestDataRepository;
+
+	@Autowired
+	CumulativeContestDataRepository cumulativeContestDataRepository;
 
 	public ContestHeader createContestHeader(String name, String tokenContract, String startDate, String endDate,
 			boolean isActive) {
@@ -171,8 +177,9 @@ public class ContestService {
 			 * .findByContestHeaderIdAndTokenAmountGreaterThanOrderByTokenAmountDesc(
 			 * contestId, 1.0);
 			 */
-			
-			List<ContestData> contestsData = contestDataRepository.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
+
+			List<ContestData> contestsData = contestDataRepository
+					.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
 
 			int index = 0;
 			List<ContestData> result = new ArrayList<ContestData>();
@@ -192,6 +199,54 @@ public class ContestService {
 		} else {
 			return getContestDataExcludingSellsDesc(contestId, orderBy);
 		}
+
+	}
+
+	public List<ContestData> getAllTypesLeaders(Long contestId, String orderBy, String type) {
+		switch (type) {
+		case LeaderboardType.SHOW_ALL:
+			
+			return getCurrentLeadersContestData(contestId, orderBy, false);
+
+		case LeaderboardType.MEDIAN_LEADERS:
+			return getCurrentLeadersContestData(contestId, orderBy, true);
+
+		case LeaderboardType.WHALES:
+			return getCumulativeLeaders(contestId, orderBy,10);
+
+		default:
+			return getCurrentLeadersContestData(contestId, orderBy, false);
+			
+		}
+	}
+
+	public List<ContestData> getCumulativeLeaders(Long contestId, String orderBy, int top) {
+		List<CumulativeContestData> cumulativeContestData = cumulativeContestDataRepository
+				.findByContestHeaderIdOrderByPurchaseValueInUSDDesc(contestId);
+
+		List<ContestData> result = new ArrayList<ContestData>();
+
+		
+
+		int index = 1;
+		for (CumulativeContestData data : cumulativeContestData) {
+
+			if (index <= top) {
+
+				ContestData contestData = ContestData.builder().address(data.getAddress())
+						.contestHeader(data.getContestHeader()).id(data.getId()).isMedian(data.isMedian())
+						.isMedianLeader(data.isMedianLeader()).isWinner(data.isWinner())
+						.purchaseValueInETH(data.getPurchaseValueInETH())
+						.purchaseValueInUSD(data.getPurchaseValueInUSD()).rank(index)
+						.tokenAmount(data.getTokenAmount()).build();
+
+				result.add(contestData);
+				index++;
+			} else
+				break;
+		}
+
+		return result;
 
 	}
 

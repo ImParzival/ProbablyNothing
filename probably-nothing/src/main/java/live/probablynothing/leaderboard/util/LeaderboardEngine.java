@@ -22,6 +22,10 @@ public class LeaderboardEngine {
 
 	@Autowired
 	ContestDataRepository contestDataRepository;
+	
+	@Autowired
+	LeaderboardEngineOld oldEngine;
+	
 
 	private static final String SELL = "SELL";
 
@@ -40,6 +44,8 @@ public class LeaderboardEngine {
 
 		// Call bitquery API to get the latest trades
 		DexTradeDTO dto = bitqueryClient.getDexTrades(contestHeader, startDate, endDate);
+		
+		processCumulativeContestData(dto,contestHeader, startDate, endDate);
 
 		if (numberOfTradesFound == dto.getData().getEthereum().getDexTrades().size()) {
 			System.out.println("No new transactions found..");
@@ -70,6 +76,11 @@ public class LeaderboardEngine {
 			contestDataRepository.deleteAll();
 			contestDataRepository.saveAll(contestsData);
 		}
+	}
+	
+	private void processCumulativeContestData(DexTradeDTO dto, ContestHeader contestHeader, String startDate, String endDate) throws IOException {
+		
+		oldEngine.process(dto, contestHeader, startDate, endDate);
 	}
 
 }

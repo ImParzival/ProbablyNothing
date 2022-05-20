@@ -28,8 +28,8 @@ public class BitqueryCallExecutor {
 	@Autowired
 	TokenInfoService tokenInfoService;
 
-	//@Scheduled(fixedDelay = 600000)
-	@Scheduled(fixedDelay = 30000)
+	@Scheduled(fixedDelay = 600000)
+	//@Scheduled(fixedDelay = 30000)
 	public void getLatestDexTrades() throws ParseException, IOException {
 
 		// 1. Read the active contest
@@ -44,7 +44,7 @@ public class BitqueryCallExecutor {
 			engine.process(contestHeader, startDate, endDate);
 			
 			//Get the Total Number of Token Holders and save it locally
-			tokenInfoService.saveTokenInfo(contestHeader.getTokenContract());
+			//tokenInfoService.saveTokenInfo(contestHeader.getTokenContract());
 		}
 		else
 			System.out.println("No active contest found");

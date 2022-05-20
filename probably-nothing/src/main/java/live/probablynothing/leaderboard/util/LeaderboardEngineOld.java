@@ -12,9 +12,11 @@ import org.springframework.stereotype.Component;
 import live.probablynothing.leaderboard.client.BitqueryClient;
 import live.probablynothing.leaderboard.model.ContestData;
 import live.probablynothing.leaderboard.model.ContestHeader;
+import live.probablynothing.leaderboard.model.CumulativeContestData;
 import live.probablynothing.leaderboard.model.bitquery.dto.DexTradeDTO;
 import live.probablynothing.leaderboard.model.bitquery.dto.DexTradeDTO.DexTrade;
 import live.probablynothing.leaderboard.repository.ContestDataRepository;
+import live.probablynothing.leaderboard.repository.CumulativeContestDataRepository;
 
 @Component
 public class LeaderboardEngineOld {
@@ -23,19 +25,19 @@ public class LeaderboardEngineOld {
 	BitqueryClient bitqueryClient;
 
 	@Autowired
-	ContestDataRepository contestDataRepository;
+	CumulativeContestDataRepository CumulativeContestDataRepository;
 
 	private static final String SELL = "SELL";	
 	
 	int numberOfTradesFound ;
 
-	public void process(ContestHeader contestHeader, String startDate, String endDate) throws IOException {
+	public void process(DexTradeDTO dto, ContestHeader contestHeader, String startDate, String endDate) throws IOException {
 
 		// query bitquery API to get the latest trades
-		DexTradeDTO dto = bitqueryClient.getDexTrades(contestHeader, startDate, endDate);
+		//DexTradeDTO dto = bitqueryClient.getDexTrades(contestHeader, startDate, endDate);
 
 		Map<String, Integer> addressIndex = new HashMap<String, Integer>();
-		List<ContestData> contestsData = new ArrayList<ContestData>();
+		List<CumulativeContestData> contestsData = new ArrayList<CumulativeContestData>();
 		try {
 			if(numberOfTradesFound == dto.getData().getEthereum().getDexTrades().size())
 			{
@@ -45,7 +47,7 @@ public class LeaderboardEngineOld {
 		    numberOfTradesFound = dto.getData().getEthereum().getDexTrades().size();
 			for (DexTrade trade : dto.getData().getEthereum().getDexTrades()) {
 				String walletAddress = trade.getTransaction().getTxFrom().getAddress();
-				ContestData contestData;
+				CumulativeContestData contestData;
 				if (addressIndex.containsKey(walletAddress)) {
 					int index = addressIndex.get(walletAddress);
 					contestData = contestsData.get(index);
@@ -63,7 +65,7 @@ public class LeaderboardEngineOld {
 					}
 
 				} else {
-					contestData = new ContestData();
+					contestData = new CumulativeContestData();
 					contestData.setAddress(walletAddress);
 					contestData.setContestHeader(contestHeader);
 					if (trade.getSide().equals(SELL))
@@ -84,8 +86,8 @@ public class LeaderboardEngineOld {
 			}
 			if(!contestsData.isEmpty())
 			{
-				contestDataRepository.deleteAll();
-				contestDataRepository.saveAll(contestsData);
+				CumulativeContestDataRepository.deleteAll();
+				CumulativeContestDataRepository.saveAll(contestsData);
 			}
 			
 			System.out.println("Leaderboard updated...");

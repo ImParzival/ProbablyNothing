@@ -3,13 +3,13 @@ package live.probablynothing.leaderboard.service;
 import java.io.IOException;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
 import live.probablynothing.leaderboard.client.EtherscanClient;
 import live.probablynothing.leaderboard.model.TokenInfo;
 import live.probablynothing.leaderboard.repository.TokenInfoRepository;
 
-@Service
+@Component
 public class TokenInfoService {
 
 	@Autowired

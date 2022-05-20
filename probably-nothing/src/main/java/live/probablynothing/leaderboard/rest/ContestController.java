@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import live.probablynothing.leaderboard.model.ContestData;
 import live.probablynothing.leaderboard.model.ContestHeader;
+import live.probablynothing.leaderboard.model.CumulativeContestData;
 import live.probablynothing.leaderboard.repository.ContestHeaderRepository;
 import live.probablynothing.leaderboard.service.ContestService;
 import live.probablynothing.leaderboard.util.DateTimeUtil;
@@ -135,9 +136,10 @@ public class ContestController {
 	}
 	
 	
-	
-	
-	
+	@GetMapping("/leaderboardNew")
+	public @ResponseBody ResponseEntity<List<ContestData>> getCumulativeLeaders(@RequestParam("contestId") Long contestId, @RequestParam("orderBy") String orderBy, @RequestParam("type") String type){
+		return ResponseEntity.status(HttpStatus.OK).body(contestService.getAllTypesLeaders(contestId, orderBy, type));
+	}
 	
 	
 	
